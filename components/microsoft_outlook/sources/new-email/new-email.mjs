@@ -7,25 +7,17 @@ export default {
   key: "microsoft_outlook-new-email",
   name: "New Email Event (Instant)",
   description: "Emit new event when an email is received in specified folders.",
-  version: "0.0.10",
+  version: "0.0.14",
   type: "source",
   dedupe: "unique",
   props: {
     ...common.props,
     folderIds: {
-      type: "string[]",
-      label: "Folder IDs to Monitor",
-      description: "Specify the folder IDs or names in Outlook that you want to monitor for new emails. Leave empty to monitor all folders (excluding \"Sent Items\" and \"Drafts\").",
+      propDefinition: [
+        common.props.microsoftOutlook,
+        "folderIds",
+      ],
       optional: true,
-      async options() {
-        const { value: folders } = await this.listFolders();
-        return folders?.map(({
-          id: value, displayName: label,
-        }) => ({
-          value,
-          label,
-        })) || [];
-      },
     },
   },
   hooks: {
@@ -56,15 +48,10 @@ export default {
   },
   methods: {
     ...common.methods,
-    listFolders() {
-      return this.microsoftOutlook._makeRequest({
-        path: "/me/mailFolders",
-      });
-    },
     async getFolderIdByName(name) {
-      const { value: folders } = await this.listFolders();
-      const { id } = folders.find(({ displayName }) => displayName === name);
-      return id;
+      const { value: folders } = await this.microsoftOutlook.listFolders();
+      const folder = folders.find(({ displayName }) => displayName === name);
+      return folder?.id;
     },
     async getSampleEvents({ pageSize }) {
       const folders = this.folderIds?.length
